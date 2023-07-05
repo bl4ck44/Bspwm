@@ -32,11 +32,6 @@ int_handler (){
 
 trap 'int_handler' INT
 
-if [ "$(id -u)" != "0" ]; then
-   echo -e "\033[1m Ejecute este script como root (usando sudo). \033[0m"
-   exit 1
-fi
-
 echo
 
    echo
