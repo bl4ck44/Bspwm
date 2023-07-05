@@ -36,7 +36,3 @@ cd ..
 
 bash setup.sh
 ```
-
-<p align="center">
-<img src="./Img/Parrot-OS.png">
-</p>
