@@ -45,11 +45,11 @@ echo
    case $opcion in
 
            1) echo
-           source Kali-Linux/
+           source Kali-Linux/intall.sh
            bash install.sh;;
 
            2) echo
-           source Parrot-OS/
+           source Parrot-OS/install.sh
            bash install.sh;;
 
            3) echo
