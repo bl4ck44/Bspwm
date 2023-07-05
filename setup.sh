@@ -45,7 +45,7 @@ echo
    case $opcion in
 
            1) echo
-           source Kali-Linux/intall.sh
+           source Kali-Linux/install.sh
            bash install.sh;;
 
            2) echo
