@@ -51,10 +51,12 @@ echo
 
            1) echo
            source Kali-Linux/
+           sudo chmod +x install.sh
            bash install.sh;;
 
            2) echo
            source Parrot-OS/
+           sudo chmod +x install.sh
            bash install.sh;;
 
            3) echo
