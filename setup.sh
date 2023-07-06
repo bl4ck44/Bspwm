@@ -46,11 +46,11 @@ echo
 
            1) echo
            source Kali-Linux/install.sh
-           bash install.sh;;
+           ./install.sh;;
 
            2) echo
            source Parrot-OS/install.sh
-           bash install.sh;;
+           ./install.sh;;
 
            3) echo
            clear
