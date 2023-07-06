@@ -44,3 +44,11 @@ bash setup.sh
 <p align="center">
 <img src="./Img/Parrot-OS.png">
 </p>
+
+**Creditos:**
+
+xJacksx https://github.com/xJackSx/
+
+Mr.Pr1ngl3s https://github.com/MrPr1ngl3s
+
+S4vitar https://github.com/s4vitar
