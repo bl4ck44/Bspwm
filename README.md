@@ -21,6 +21,10 @@ cd ..
 bash setup.sh
 ```
 
+<p align="center">
+<img src="./Img/Kali-Linux.png">
+</p>
+
 ### **Parrot OS**
 
 ```
