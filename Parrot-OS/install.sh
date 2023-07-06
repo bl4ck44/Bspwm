@@ -81,7 +81,7 @@ sudo cp -v $ruta/fonts/HNF/* /usr/local/share/fonts/
 
 sudo cp -v $ruta/Config/polybar/fonts/* /usr/share/fonts/truetype/
 
-# Instalando Wallpaper de S4vitar
+# Instalando Wallpaper
 
 mkdir ~/Wallpaper
 cp -v $ruta/Wallpaper/* ~/Wallpaper
