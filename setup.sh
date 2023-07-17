@@ -50,7 +50,7 @@ echo
 
            2) echo
            source Parrot-OS/install.sh
-           ./install.sh;;
+           bash install.sh;;
 
            3) echo
            clear
