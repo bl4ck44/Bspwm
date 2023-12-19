@@ -1,56 +1,48 @@
 # Bspwm
 
-Bspwm es un gestor de ventanas para sistemas operativos basados en Unix, como Linux. "BSPWM" es un acrónimo de "Binary Space Partitioning Window Manager". Este gestor de ventanas utiliza la técnica de particionado binario para organizar y gestionar las ventanas en el escritorio.
+### Uso del Script
 
-Bspwm es conocido por ser extremadamente liviano y altamente personalizable. No incluye muchas de las características y decoraciones visuales de otros entornos de escritorio, lo que permite a los usuarios tener un mayor control sobre el manejo de sus ventanas y el flujo de trabajo en general.
+1.- Uso del Script
 
-
-### **Kali Linux**
-
-```
-git clone https://github.com/bl4ck44/Bspwm.git
+```bash
+git clone https://github.com/Devsebastian31/Bspwm.git
 
 cd Bspwm
 
-cd Kali-Linux
+chmod +x install.sh
 
-sudo chmod +x install.sh
+./install.sh
+```
 
-cd ..
+### Para la selección de Rofi
 
-bash setup.sh
+```bash
+rofi-theme-selector
+
+Arc-Dark.rasi
+
+Alt-a
 ```
 
 <p align="center">
-<img src="./Img/Kali-Linux.png">
+    <img src="Fondo.png">
 </p>
 
-### **Parrot OS**
+### Atajos del teclado
 
+```bash
+===========================================================================================================
+windows + enter abre terminal
+windows + w cierra terminal
+windows + d abre el buscador de aplicaciones
+windows hold mover libremente la ventana
+windows clic derecho reescalar libremente la ventana
+windows + alt + flechas escalar ventana
+windows + ctl + flechas mover ventana
+control + shift + t abre pestaña en terminal
+control shift alt t renombrar pestaña de terminal
+control shift w cerrar pestaña de terminal
+windows + "1,2,3,4,5,6,7,8,9,0" cambiar de escritorio
+windows + shift + "1,2,3,4,5,6,7,8,9,0" cambiar de escritorio la ventana actual al escritorio seleccionado
+============================================================================================================
 ```
-git clone https://github.com/bl4ck44/Bspwm.git
-
-cd Bspwm
-
-cd Parrot-OS
-
-sudo chmod +x install.sh
-
-cd ..
-
-bash setup.sh
-```
-
-<p align="center">
-<img src="./Img/Parrot-OS.png">
-</p>
-
-**Creditos:**
-
-xJacksx https://github.com/xJackSx/
-
-Mr.Pr1ngl3s https://github.com/MrPr1ngl3s
-
-S4vitar https://github.com/s4vitar
-
-zlcube https://github.com/ZLCube
