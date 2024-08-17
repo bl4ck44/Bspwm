@@ -5,10 +5,14 @@ vmware-user-suid-wrapper &
 
 pgrep -x sxhkd > /dev/null || sxhkd &
 
-bspc monitor -d I II III IV V IV VII
+bspc monitor -d I II III IV V VI VII VIII IX X
 
-bspc config border_width         2
-bspc config window_gap          12
+CURRENT_BORDER='2.5'
+CURRENT_GAP='19'
+CURRENT_SRATIO='1.4'
+
+#bspc config border_width         2
+#bspc config window_gap          12
 
 bspc config split_ratio          0.52
 bspc config borderless_monocle   true
@@ -20,11 +24,25 @@ bspc rule -a mplayer2 state=floating
 bspc rule -a Kupfer.py focus=on
 bspc rule -a Screenkey manage=off
 
+
+bspc config border_width "$CURRENT_BORDER"
+bspc config window_gap "$CURRENT_GAP"
+bspc config split_ratio "$CURRENT_SRATIO"
+bspc config focused_border_color "$BLUE" 
+bspc config normal_border_color "$BACKGROUND"
+bspc config active_border_color "$MAGENTA"
+bspc config presel_feedback_color "$GREEN"
+bspc config borderless_monocle true
+bspc config gapless_monocle true
+bspc config paddingless_monocle true
+bspc config single_monocle false
+bspc config focus_follows_pointer true
+
 # RESOLUCION ARANDR
 
 
 # WALLPAPER
-feh --bg-fill ~/Wallpapers/Wallpaper.jpg
+feh --bg-fill ~/Wallpaper/a.png
 
 # POLYBAR
 ~/.config/polybar/launch.sh
@@ -34,6 +52,6 @@ bspc config focus_follows_pointer true
 
 # PICOM
 picom &
-bspc config border_width 0
+bspc config border_width 0.2
 
 xsetroot -cursor_name left_ptr &

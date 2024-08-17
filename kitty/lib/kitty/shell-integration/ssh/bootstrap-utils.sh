@@ -25,14 +25,7 @@ compile_terminfo() {
 
     if [ -e "/usr/share/misc/terminfo.cdb" ]; then
         # NetBSD requires this file, see https://github.com/kovidgoyal/kitty/issues/4622
-        # Also compile terminfo using tic installed via pkgsrc,
-        # so that programs that depend on the new version of ncurses automatically fall back to this one.
-        if [ -x "/usr/pkg/bin/tic" ]; then
-            /usr/pkg/bin/tic -x -o "$1/$tname" "$1/.terminfo/kitty.terminfo" 2>/dev/null
-        fi
-        if [ ! -e "$1/$tname/x/xterm-kitty" ]; then
-            command ln -sf "../../.terminfo.cdb" "$1/$tname/x/xterm-kitty"
-        fi
+        command ln -sf "../../.terminfo.cdb" "$1/$tname/x/xterm-kitty"
         tname=".terminfo.cdb"
     fi
 
@@ -67,12 +60,12 @@ using_id() {
 }
 
 using_python() {
-    detect_python && output=$(command "$python" -c "import pwd, os; print(pwd.getpwuid(os.geteuid()).pw_shell)" 2>/dev/null) \
+    detect_python && output=$(command "$python" -c "import pwd, os; print(pwd.getpwuid(os.geteuid()).pw_shell)") \
     && login_shell="$output" && login_shell_is_ok
 }
 
 using_perl() {
-    detect_perl && output=$(command "$perl" -e 'my $shell = (getpwuid($<))[8]; print $shell' 2>/dev/null) \
+    detect_perl && output=$(command "$perl" -e 'my $shell = (getpwuid($<))[8]; print $shell') \
     && login_shell="$output" && login_shell_is_ok
 }
 
@@ -177,6 +170,11 @@ fi' > "$sh_script"
 }
 
 install_kitty_bootstrap() {
+    case "$(command uname)" in
+        Linux) ;;
+        Darwin) ;;
+        *) return ;;
+    esac
     kitty_exists="n"
     command -v kitty 2> /dev/null > /dev/null && kitty_exists="y"
     if [ "$kitty_remote" = "yes" -o "$kitty_remote-$kitty_exists" = "if-needed-n" ]; then
@@ -226,7 +224,7 @@ exec_login_shell() {
             ;;
         (*)
             # not blank
-            printf "%s" "$KITTY_SHELL_INTEGRATION" | command grep -q '\bno-rc\b' || exec_with_shell_integration
+            printf "%s" "$KITTY_SHELL_INTEGRATION" | command grep '\bno-rc\b' || exec_with_shell_integration
             # either no-rc or exec failed
             unset KITTY_SHELL_INTEGRATION
             ;;

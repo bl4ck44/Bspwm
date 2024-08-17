@@ -6,6 +6,11 @@
 super + Return
 	/opt/kitty/bin/kitty
 
+# i3lock 
+shift + l
+	/usr/bin/i3lock-everblush
+
+
 # program launcher
 super + d
 	rofi -show run
@@ -19,7 +24,7 @@ super + Escape
 #################
 
 # quit/restart bspwm
-super + shift + {q,r}
+super + alt + {q,r}
 	bspc {quit,wm -r}
 
 # close and kill
@@ -130,7 +135,7 @@ super + alt + {Left,Down,Up,Right}
 
 # Firefox
 super + shift + f
-	/opt/firefox/firefox
+	firefox
 
 # BurpSuite
 super + shift + b

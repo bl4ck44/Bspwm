@@ -10,7 +10,7 @@
 }
 
 .sidebar-logo {
-    height: 128px;
+    max-height: 128px;
 }
 
 .major-features li {

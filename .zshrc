@@ -43,7 +43,6 @@ zstyle ':completion:*' verbose true
 
 zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#)*=0=01;31'
 zstyle ':completion:*:kill:*' command 'ps -u $USER -o pid,%cpu,tty,cputime,cmd'
-source /home/bl4ck44/.powerlevel10k/powerlevel10k.zsh-theme
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
@@ -52,18 +51,22 @@ source /home/bl4ck44/.powerlevel10k/powerlevel10k.zsh-theme
 
 PATH=/root/.local/bin:/snap/bin:/usr/sandbox/:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games:/usr/share/games:/usr/local/sbin:/usr/sbin:/sbin:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games
 
-# Manual aliases
+# Custom Aliases
+
 alias ll='lsd -lh --group-dirs=first'
 alias la='lsd -a --group-dirs=first'
 alias l='lsd --group-dirs=first'
 alias lla='lsd -lha --group-dirs=first'
 alias ls='lsd --group-dirs=first'
-alias cat='bat'
+alias cat='/bin/batcat --paging=never'
+alias catn='cat'
+alias catnl='batcat'
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 # Plugins
 source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+#source /usr/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh
 source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 source /usr/share/zsh-sudo/sudo.plugin.zsh
 
@@ -82,6 +85,18 @@ function extractPorts(){
 	echo $ports | tr -d '\n' | xclip -sel clip
 	echo -e "[*] Ports copied to clipboard\n"  >> extractPorts.tmp
 	cat extractPorts.tmp; rm extractPorts.tmp
+}
+
+# Settarget
+
+function settarget(){
+	if [ $# -eq 1 ]; then
+	echo $1 > ~/.config/bin/target
+	elif [ $# -gt 2 ]; then
+	echo "settarget [IP] [NAME] | settarget [IP]"
+	else
+	echo $1 $2 > ~/.config/bin/target
+	fi
 }
 
 # Set 'man' colors
@@ -114,7 +129,7 @@ function fzf-lovely(){
 	                         echo {} is a binary file ||
 	                         (bat --style=numbers --color=always {} ||
 	                          highlight -O ansi -l {} ||
-	                          coderay {} ||
+	                         coderay {} ||
 	                          rougify {} ||
 	                          cat {}) 2> /dev/null | head -500'
 	fi
@@ -126,4 +141,11 @@ function rmk(){
 }
 
 # Finalize Powerlevel10k instant prompt. Should stay at the bottom of ~/.zshrc.
-(( ! ${+functions[p10k-instant-prompt-finalize]} )) || p10k-instant-prompt-finalize
+(( ! ${+functions[p10k-instant-prompt-finalize]} )) || p10k-instant-prompt-finalize 
+
+bindkey "^[[H" beginning-of-line
+bindkey "^[[F" end-of-line
+bindkey "^[[3~" delete-char
+bindkey "^[[1;3C" forward-word
+bindkey "^[[1;3D" backward-word
+source ~/.powerlevel10k/powerlevel10k.zsh-theme
