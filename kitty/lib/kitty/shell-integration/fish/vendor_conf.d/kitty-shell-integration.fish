@@ -70,29 +70,43 @@ function __ksi_schedule --on-event fish_prompt -d "Setup kitty integration after
     end
 
     # Enable prompt marking with OSC 133
-    if not contains "no-prompt-mark" $_ksi
-        and not set -q __ksi_prompt_state
-        function __ksi_mark_prompt_start --on-event fish_prompt --on-event fish_cancel --on-event fish_posterror
-            test "$__ksi_prompt_state" != prompt-start
-            and echo -en "\e]133;D\a"
-            set --global __ksi_prompt_state prompt-start
-            echo -en "\e]133;A\a"
+    if not contains "no-prompt-mark" $_ksi and not set -q __ksi_prompt_state
+        set --local suffix ''
+        if bind --function-names | string match -q forward-char-passive
+            set suffix '-passive'
         end
-        __ksi_mark_prompt_start
+        # fish 3.8 emits prompt markers, so we don't need to. It also is the
+        # first version to define forward-char-passive so use that as a test to detect it
+        if test "$suffix" = ""
+            function __ksi_mark_prompt_start --on-event fish_prompt --on-event fish_cancel --on-event fish_posterror
+                test "$__ksi_prompt_state" != prompt-start
+                and echo -en "\e]133;D\a"
+                set --global __ksi_prompt_state prompt-start
+                echo -en "\e]133;A;special_key=1\a"
+            end
+            __ksi_mark_prompt_start
 
-        function __ksi_mark_output_start --on-event fish_preexec
-            set --global __ksi_prompt_state pre-exec
-            echo -en "\e]133;C\a"
+            function __ksi_mark_output_start --on-event fish_preexec
+                set --global __ksi_prompt_state pre-exec
+                printf '\e]133;C;cmdline_url=%s\a' (string escape --style=url -- "$argv")
+            end
+
+            function __ksi_mark_output_end --on-event fish_postexec
+                set --global __ksi_prompt_state post-exec
+                echo -en "\e]133;D;$status\a"
+            end
+
+            # With prompt marking, kitty clears the current prompt on resize,
+            # so we need fish to redraw it.
+            set --global fish_handle_reflow 1
         end
 
-        function __ksi_mark_output_end --on-event fish_postexec
-            set --global __ksi_prompt_state post-exec
-            echo -en "\e]133;D;$status\a"
+        # Binding for special key to move cursor on mouse click without triggering any
+        # autocompletion or other effects
+        for mode in (bind --list-modes | string match -v paste)  # bind in all modes except paste
+            bind --preset -M "$mode" \e\[1u "forward-char$suffix"
+            bind --preset -M "$mode" \e\[1\;1u "backward-char$suffix"
         end
-
-        # With prompt marking, kitty clears the current prompt on resize,
-        # so we need fish to redraw it.
-        set --global fish_handle_reflow 1
     end
 
     # Enable CWD reporting
@@ -100,11 +114,37 @@ function __ksi_schedule --on-event fish_prompt -d "Setup kitty integration after
         # This function name is from fish and will override the builtin one, which is enabled by default for kitty in fish 3.5.0+.
         # We provide this to ensure that fish 3.2.0 and above will work.
         # https://github.com/fish-shell/fish-shell/blob/3.2.0/share/functions/__fish_config_interactive.fish#L275
-        function __update_cwd_osc --on-variable PWD -d "Report PWD changes to kitty"
+        # An executed program could change cwd and report the changed cwd, so also report cwd at each new prompt
+        function __update_cwd_osc --on-variable PWD --on-event fish_prompt -d "Report PWD changes to kitty"
             status is-command-substitution
             or echo -en "\e]7;kitty-shell-cwd://$hostname$PWD\a"
         end
         __update_cwd_osc
+    end
+
+    # Note that neither alias nor function is recursive in fish so if the user defines an alias/function
+    # for sudo it will be clobbered by us, so only install this if sudo is not already function
+    if not contains "no-sudo" $_ksi
+        and test -n "$TERMINFO" -a "file" = (type -t sudo 2> /dev/null || echo "x")
+        and not test -r "/usr/share/terminfo/x/xterm-kitty" -o -r "/usr/share/terminfo/78/xterm-kitty"
+        # Ensure terminfo is available in sudo
+        function sudo
+            set --local is_sudoedit "n"
+            for arg in $argv
+                if string match -q -- "-e" "$arg" or string match -q -- "--edit" "$arg"
+                    set is_sudoedit "y"
+                    break
+                end
+                if not string match -r -q -- "^-" "$arg" and not string match -r -q -- "=" "$arg"
+                    break  # reached the command
+                end
+            end
+            if string match -q -- "$is_sudoedit" "y"
+                command sudo $argv
+            else
+                command sudo TERMINFO="$TERMINFO" $argv
+            end
+        end
     end
 
     # Handle clone launches
@@ -119,8 +159,8 @@ function __ksi_schedule --on-event fish_prompt -d "Setup kitty integration after
             and return 0
             return 1
         end
-        if _ksi_s_is_ok "venv" 
-            and test -n "$VIRTUAL_ENV" -a -r "$venv" 
+        if _ksi_s_is_ok "venv"
+            and test -n "$VIRTUAL_ENV" -a -r "$venv"
             set _ksi_sourced "y"
             set --erase VIRTUAL_ENV _OLD_FISH_PROMPT_OVERRIDE  # activate.fish stupidly exports _OLD_FISH_PROMPT_OVERRIDE
             source "$venv"
@@ -155,12 +195,17 @@ function __ksi_schedule --on-event fish_prompt -d "Setup kitty integration after
     end
 end
 
+function edit-in-kitty --wraps "kitten edit-in-kitty" -d "Edit the specified file in a kitty overlay window with your locally installed editor"
+    kitten edit-in-kitty $argv
+end
+
 function __ksi_transmit_data -d "Transmit data to kitty using chunked DCS escapes"
-    set --local data_len (string length -- "$argv[1]")
+    set --local data (string replace --regex --all -- "\s" "" "$argv[1]")
+    set --local data_len (string length -- "$data")
     set --local pos 1
     set --local chunk_num 0
     while test "$pos" -le $data_len
-        printf \eP@kitty-%s\|%s:%s\e\\ "$argv[2]" "$chunk_num" (string sub --start $pos --length 2048 -- $argv[1] | string collect)
+        printf \eP@kitty-%s\|%s:%s\e\\ "$argv[2]" "$chunk_num" (string sub --start $pos --length 2048 -- "$data")
         set pos (math $pos + 2048)
         set chunk_num (math $chunk_num + 1)
     end
@@ -186,102 +231,5 @@ function clone-in-kitty -d "Clone the current fish session into a new kitty wind
     set --local b64_envs (string join0 -- $envs | base64)
     set --local b64_cwd (printf "%s" "$PWD" | base64)
     set --prepend data "shell=fish" "pid=$fish_pid" "cwd=$b64_cwd" "env=$b64_envs"
-    __ksi_transmit_data (string join "," -- $data | string replace --regex --all "\s" "") "clone"
-end
-
-function edit-in-kitty -d "Edit the specified file in a new kitty overlay using your preferred editor, even over SSH"
-    set --local data
-    set --local ed_filename ""
-    set --local usage "Usage: edit-in-kitty [OPTIONS] FILE"
-    for a in $argv
-        if contains -- "$a" -h --help
-            echo "$usage"
-            echo
-            echo "Edit the specified file in a kitty overlay window. Works over SSH as well."
-            echo
-            echo "For usage instructions see: https://sw.kovidgoyal.net/kitty/shell-integration/#edit-file"
-            return
-        end
-        set --local ea (printf "%s" "$a" | base64)
-        set --append data "a=$ea"
-        set ed_filename "$a"
-    end
-    if test -z "$ed_filename"
-        echo "$usage" > /dev/stderr
-        return 1
-    end
-    if test ! \( -r "$ed_filename" -a -w "$ed_filename" \)
-        echo "$ed_filename is not readable and writable" > /dev/stderr
-        return 1
-    end
-    if test ! -f "$ed_filename"
-        echo "$ed_filename is not a file" > /dev/stderr
-        return 1
-    end
-    set --local stat_result (stat -L --format '%d:%i:%s' "$ed_filename" 2> /dev/null)
-    if test "$status" -ne 0
-        set stat_result (stat -L -f '%d:%i:%z' "$ed_filename" 2> /dev/null)
-    end
-    if test "$status" -ne 0 || test -z "$stat_result"
-        echo "Failed to stat the file: $ed_filename" > /dev/stderr
-        return 1
-    end
-    set --append data "file_inode=$stat_result"
-    set --local file_size (string match -rg '\d+:\d+:(\d+)' "$stat_result")
-    if test "$file_size" -gt (math "8 * 1024 * 1024")
-        echo "File is too large for performant editing" > /dev/stderr
-        return 1
-    end
-    set --local file_data (base64 < "$ed_filename")
-    set --append data "file_data=$file_data"
-    __ksi_transmit_data (string join "," -- $data | string replace --regex --all "\s" "") "edit"
-    set --erase data
-    echo "Waiting for editing to be completed..."
-    set --global __ksi_waiting_for_edit "y"
-
-    function __ksi_react_to_interrupt --on-signal SIGINT
-        functions --erase __ksi_react_to_interrupt
-        if test "$__ksi_waiting_for_edit" = "y"
-            set --erase __ksi_waiting_for_edit
-            __ksi_transmit_data "abort_signaled=interrupt" "edit"
-        end
-    end
-
-    while true
-        set --local started "n"
-        while true
-            stty "-echo"
-            set --local line (head -n1 < /dev/tty)
-            test -z "$line" && break
-            if test "$started" = "y"
-                test "$line" = "UPDATE" && break
-                if test "$line" = "DONE"
-                    set started "done"
-                    break
-                end
-                printf "%s\n" "$line" > /dev/stderr
-                set --erase __ksi_waiting_for_edit
-                functions --erase __ksi_react_to_interrupt
-                return 1
-            else
-                test "$line" = "KITTY_DATA_START" && set started "y"
-            end
-        end
-        test "$started" = "n" && continue
-        set --local data ""
-        while true
-            stty "-echo"
-            set --local line (head -n1 < /dev/tty)
-            test -z "$line" && break
-            test "$line" = "KITTY_DATA_END" && break
-            set data "$data$line"
-        end
-        if test -n "$data" -a "$started" != "done"
-            echo "Updating $ed_filename..."
-            printf "%s" "$data" | base64 -d > "$ed_filename"
-        end
-        test "$started" = "done" && break
-    end
-    set --erase __ksi_waiting_for_edit
-    functions --erase __ksi_react_to_interrupt
+    __ksi_transmit_data (string join "," -- $data) "clone"
 end

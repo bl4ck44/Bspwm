@@ -60,7 +60,7 @@ disabled
 no-rc
     Do not modify the shell's launch environment to enable integration. Useful
     if you prefer to load the kitty shell integration code yourself, either as
-    part of :ref:`manually integration <manual_shell_integration>` or because
+    part of :ref:`manual integration <manual_shell_integration>` or because
     you have some other software that sets up shell integration.
     This will still set the :envvar:`KITTY_SHELL_INTEGRATION` environment
     variable when kitty runs the shell.
@@ -85,11 +85,21 @@ no-cwd
 no-prompt-mark
     Turn off marking of prompts. This disables jumping to prompt, browsing
     output of last command and click to move cursor functionality.
+    Note that for the fish shell this does not take effect, since fish always
+    marks prompts.
 
 no-complete
     Turn off completion for the kitty command.
     Note that for the fish shell this does not take effect, since fish already
     comes with a kitty completion script.
+
+no-sudo
+    Do not alias :program:`sudo` to ensure the kitty terminfo files are
+    available in the sudo environment. This is needed if you have sudo
+    configured to disable setting of environment variables on the command line.
+    By default, if sudo is configured to allow all commands for the current
+    user, setting of environment variables at the command line is also allowed.
+    Only if commands are restricted is this needed.
 
 
 More ways to browse command output
@@ -214,13 +224,27 @@ Shell integration over SSH
 The easiest way to have shell integration work when SSHing into remote systems
 is to use the :doc:`ssh kitten <kittens/ssh>`. Simply run::
 
-    kitty +kitten ssh hostname
+    kitten ssh hostname
 
 And, by magic, you will be logged into the remote system with fully functional
 shell integration. Alternately, you can :ref:`setup shell integration manually
 <manual_shell_integration>`, by copying the kitty shell integration scripts to
 the remote server and editing the shell rc files there, as described below.
 
+
+Shell integration in a container
+----------------------------------
+
+Install the kitten `standalone binary
+<https://github.com/kovidgoyal/kitty/releases/latest/download/kitten-linux-amd64>`__ in the container
+somewhere in the PATH, then you can log into the container with:
+
+.. code-block:: sh
+
+   docker exec -ti container-id kitten run-shell --shell=/path/to/your/shell/in/the/container
+
+The kitten will even take care of making the kitty terminfo database available
+in the container automatically.
 
 .. _clone_shell:
 
@@ -291,6 +315,36 @@ window, etc. Not all arguments are supported, see the discussion in the
 In order to avoid remote code execution, kitty will only execute the configured
 editor and pass the file path to edit to it.
 
+.. note:: To edit files using sudo the best method is to set the
+   :code:`SUDO_EDITOR` environment variable to ``kitten edit-in-kitty`` and
+   then edit the file using the ``sudoedit`` or ``sudo -e`` commands.
+
+
+.. _run_shell:
+
+Using shell integration in sub-shells, containers, etc.
+-----------------------------------------------------------
+
+.. versionadded:: 0.29.0
+
+To start a sub-shell with shell integration automatically setup, simply run::
+
+    kitten run-shell
+
+This will start a sub-shell using the same binary as the currently running
+shell, with shell-integration enabled. To start a particular shell use::
+
+    kitten run-shell --shell=/bin/bash
+
+To run a command before starting the shell use::
+
+    kitten run-shell ls .
+
+This will run ``ls .`` before starting the shell.
+
+This will even work on remote systems where kitty itself is not installed,
+provided you use the :doc:`SSH kitten <kittens/ssh>` to connect to the system.
+Use ``kitten run-shell --help`` to learn more.
 
 .. _manual_shell_integration:
 
@@ -298,9 +352,9 @@ Manual shell integration
 ----------------------------
 
 The automatic shell integration is designed to be minimally intrusive, as such
-it wont work for sub-shells, terminal multiplexers, containers, etc.
-For such systems, you should setup manual shell integration by adding some code
-to your shells startup files to load the shell integration script.
+it won't work for sub-shells, terminal multiplexers, containers, etc.
+For such systems, you should either use the :ref:`run-shell <run_shell>` command described above or
+setup manual shell integration by adding some code to your shells startup files to load the shell integration script.
 
 First, in :file:`kitty.conf` set:
 
@@ -358,7 +412,7 @@ shells:
 
 * Jupyter console and IPython via a patch (:iss:`4475`)
 * `xonsh <https://github.com/xonsh/xonsh/issues/4623>`__
-
+* `Nushell <https://github.com/nushell/nushell/discussions/12065>`__: Set ``$env.config.shell_integration = true`` in your ``config.nu`` to enable it.
 
 Notes for shell developers
 -----------------------------
@@ -379,7 +433,38 @@ Just before running a command/program, send the escape code::
 
     <OSC>133;C<ST>
 
+Optionally, when a command is finished its "exit status" can be reported as::
+
+    <OSC>133;D;exit status as base 10 integer<ST>
+
 Here ``<OSC>`` is the bytes ``0x1b 0x5d`` and ``<ST>`` is the bytes ``0x1b
 0x5c``. This is exactly what is needed for shell integration in kitty. For the
 full protocol, that also marks the command region, see `the iTerm2 docs
 <https://iterm2.com/documentation-escape-codes.html>`_.
+
+kitty additionally supports several extra fields for the ``<OSC>133;A`` command
+to control its behavior, separated by semi-colons. They are::
+
+    redraw=0 - this tells kitty that the shell will not redraw the prompt on
+    resize so it should not erase it
+
+    special_key=1 - this tells kitty to use a special key instead of arrow keys
+    to move the cursor on mouse click. Useful if arrow keys have side-effects
+    like triggering auto complete. The shell integration script then binds the
+    special key, as needed.
+
+    k=s - this tells kitty that the secondary (PS2) prompt is starting at the
+    current line.
+
+kitty also optionally supports sending the cmdline going to be executed with ``<OSC>133;C`` as::
+
+    <OSC>133;C;cmdline=cmdline encoded by %q<ST>
+    or
+    <OSC>133;C;cmdline_url=cmdline as UTF-8 URL %-escaped text<ST>
+
+
+Here, *encoded by %q* means the encoding produced by the %q format to printf in
+bash and similar shells. Which is basically shell escaping with the addition of
+using `ANSI C quoting
+<https://www.gnu.org/software/bash/manual/html_node/ANSI_002dC-Quoting.html#ANSI_002dC-Quoting>`__
+for control characters (``$''`` quoting).

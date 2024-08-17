@@ -50,7 +50,8 @@ and the terminal emulator should hold off displaying it. A value of ``1`` means
 the notification is done, and should be displayed. You can specify the title or
 body multiple times and the terminal emulator will concatenate them, thereby
 allowing arbitrarily long text (terminal emulators are free to impose a sensible
-limit to avoid Denial-of-Service attacks).
+limit to avoid Denial-of-Service attacks). The size of the payload must be no
+longer than ``2048`` bytes, *before being encoded*.
 
 Both the ``title`` and ``body`` payloads must be either UTF-8 encoded plain
 text with no embedded escape codes, or UTF-8 text that is Base64 encoded, in
@@ -93,9 +94,9 @@ to display it based on what it does understand.
    revisions.
 
 
-=======  ====================  =========  =================
+=======  ====================  ========== =================
 Key      Value                 Default    Description
-=======  ====================  =========  =================
+=======  ====================  ========== =================
 ``a``    Comma separated list  ``focus``  What action to perform when the
          of ``report``,                   notification is clicked
          ``focus``, with
@@ -112,7 +113,23 @@ Key      Value                 Default    Description
 
 ``p``    One of ``title`` or   ``title``  Whether the payload is the notification title or body. If a
          ``body``.                        notification has no title, the body will be used as title.
-=======  ====================  =========  =================
+
+``o``    One of ``always``,    ``always`` When to honor the notification request. ``unfocused`` means when the window
+         ``unfocused`` or                 the notification is sent on does not have keyboard focus. ``invisible``
+         ``invisible``                    means the window both is unfocused
+                                          and not visible to the user, for example, because it is in an inactive tab or
+                                          its OS window is not currently active.
+                                          ``always`` is the default and always honors the request.
+``u``    ``0, 1 or 2``         ``unset``  The *urgency* of the notification. ``0`` is low, ``1`` is normal and ``2`` is critical.
+                                          If not specified normal is used.
+=======  ====================  ========== =================
+
+
+.. versionadded:: 0.35.0
+   Support for the ``u`` key to specify urgency
+
+.. versionadded:: 0.31.0
+   Support for the ``o`` key to prevent notifications from focused windows
 
 
 .. note::

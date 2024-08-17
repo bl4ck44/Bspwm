@@ -126,7 +126,7 @@ receiving::
     ...
 
 The client must then wait for responses from the terminal emulator. It
-is an error to send anymore commands to to the terminal until an ``OK``
+is an error to send anymore commands to the terminal until an ``OK``
 response is received from the terminal. The terminal wait for the user to accept
 the request. If accepted, it sends::
 
@@ -171,9 +171,10 @@ terminal emulator::
     → action=file id=someid file_id=f1 name=/some/path
     ...
 
+The client must not send requests for directories and absolute symlinks.
 The terminal emulator replies with the data for the files, as a sequence of
 ``data`` commands each with a chunk of data no larger than ``4096`` bytes,
-for each file (the terminal emulator should send the data for
+for each file (the terminal emulator must send the data for
 one file at a time)::
 
 
@@ -341,7 +342,7 @@ Repeated transfer of large files that have only changed a little between
 the receiving and sending side can be sped up significantly by transmitting
 binary deltas of only the changed portions. This protocol has built-in support
 for doing that. This support uses the `rsync algorithm
-<https://github.com/librsync/librsync>`__. In this algorithm first the
+<https://rsync.samba.org/tech_report/tech_report.html>`__. In this algorithm, first the
 receiving side sends a file signature that contains hashes of blocks
 in the file. Then the sending side sends only those blocks that have changed.
 The receiving side applies these deltas to the file to update it till it matches
@@ -408,8 +409,80 @@ The client then uses this delta to update the file.
 The format of signatures and deltas
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-These come from `librsync <https://github.com/librsync/librsync>`__. If this
-specification gains wider adoption, these formats should be documented here.
+In what follows, all integers must be encoded in little-endian format,
+regardless of the architecture of the machines involved. The XXH3 hash family
+refers to `the xxHash algorithm
+<https://github.com/Cyan4973/xxHash/blob/dev/doc/xxhash_spec.md>`__.
+
+A signature first has a 12 byte header of the form:
+
+.. code::
+
+    uint16 version
+    uint16 checksum_type
+    uint16 strong_hash_type
+    uint16 weak_hash_type
+    uint32 block_size
+
+These fields define the parameters to the rsync algorithm. Allowed values are
+currently all zero except for ``block_size``, which is usually the square root
+of the file size, but implementations are free to use any algorithm they like
+to arrive at the block size.
+
+``checksum_type`` must be ``0`` which indicates using the XXH3-128 bit hash
+to verify file integrity after transmission.
+
+``strong_hash_type`` must be ``0`` which indicates using the XXH3-64 bit hash
+to identify blocks.
+
+``weak_hash_type`` must be ``0`` which indicates using the `rsync rolling
+checksum hash <https://rsync.samba.org/tech_report/node3.html>`__ to identify
+blocks, weakly.
+
+After the header comes the list of block signatures. The number of blocks is
+unknown allowing for streaming, the transfer protocol takes care of indicating
+end-of-stream via an ``action=end_data`` packet. Each signature in the list is of the form:
+
+.. code::
+
+   uint64 index
+   uint32 weak_hash
+   uint64 strong_hash
+
+Here, ``index`` is the zero-based block number. ``weak_hash`` is the weak, but easy
+to calculate hash of the block and strong hash is a stronger hash of the block
+that is very unlikely to collide.
+
+The algorithms used for these hashes are specified by the signature header
+above. Given the ``block_size`` from the header and ``index`` the position of a
+block in the file is: ``index * block_size``.
+
+Once the sending side receives the signature, it calculates a *delta* based on
+the actual file contents and transmits that delta to the receiving side. The delta
+is of the form of a list of *operations*. An operation is a single byte
+denoting the operation type followed by variable length data depending on the
+type. The types of operations are:
+
+``Block (type=0)``
+    Followed by an 8 byte ``uint64`` that is the block index. It means copy the
+    specified block from the existing file to the output, unmodified.
+
+``Data (type=1)``
+    Followed by a 4 byte ``uint32`` that is the size of the payload and then the
+    payload itself. The payload must be written to the output.
+
+``Hash (type=2)``
+    Followed by a 2 byte ``uint16`` specifying the size of the hash checksum and
+    then the checksum itself. The checksum of the output file must match this
+    checksum. The algorithm used to calculate the checksum is specified in the
+    signature header.
+
+``BlockRange (type=3)``
+    Followed by an 8 byte ``uint64`` that is the starting block index and then
+    a 4 byte ``uint32`` (``N``) that is the number of additional blocks. Works just
+    like ``Block`` above, except that after copying the block an additional (``N``) more
+    blocks must be copied.
+
 
 Compression
 --------------
@@ -457,6 +530,12 @@ The value of ``bypass`` is of the form ``hash_function_name : hash_value``
    exist hash functions harder to compute than SHA256, they are unsuitable as
    they will introduce a lot of latency to starting a session and in any case
    there is no mathematical proof that **any** hash function is not brute-forceable.
+
+Terminal implementations are free to use their own more advanced hashing
+schemes, with prefixes other than those starting with ``sha``, which are
+reserved. For instance, kitty uses a scheme based on public key encryption
+via :envvar:`KITTY_PUBLIC_KEY`. For details of this scheme, see the
+``check_bypass()`` function in the kitty source code.
 
 Encoding of transfer commands as escape codes
 ------------------------------------------------
@@ -508,12 +587,12 @@ enum
         ac=file
 
 safe_string
-    A string consisting only of characters from the set ``[0-9a-zA-Z_:.,/!@#$%^&*()[]{}~`?"'\\|=+-]``
+    A string consisting only of characters from the set ``[0-9a-zA-Z_:./@-]``
     Note that the semi-colon is missing from this set.
 
 integer
     A base-10 number composed of the characters ``[0-9]`` with a possible
-    leading ``-`` sign
+    leading ``-`` sign. When missing the value is zero.
 
 base64_string
     A base64 encoded UTF-8 string using the standard base64 encoding

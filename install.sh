@@ -5,10 +5,11 @@ if [ "$(whoami)" == "root" ]; then
 fi
 
 ruta=$(pwd)
+usuario=$(whoami)
 
 # Instalando dependencias de Entorno
 
-sudo apt install -y zenity build-essential git vim xcb libxcb-util0-dev libxcb-ewmh-dev libxcb-randr0-dev libxcb-icccm4-dev libxcb-keysyms1-dev libxcb-xinerama0-dev libasound2-dev libxcb-xtest0-dev libxcb-shape0-dev
+sudo apt install -y build-essential git vim thunar xcb libxcb-util0-dev libxcb-ewmh-dev libxcb-randr0-dev libxcb-icccm4-dev libxcb-keysyms1-dev libxcb-xinerama0-dev libasound2-dev libxcb-xtest0-dev libxcb-shape0-dev polybar
 
 # Instalando Requerimientos para la polybar
 
@@ -16,11 +17,11 @@ sudo apt install -y cmake cmake-data pkg-config python3-sphinx libcairo2-dev lib
 
 # Dependencias de Picom
 
-sudo apt install -y meson picom libxext-dev libxcb1-dev libxcb-damage0-dev libxcb-xfixes0-dev libxcb-shape0-dev libxcb-render-util0-dev libxcb-render0-dev libxcb-composite0-dev libxcb-image0-dev libxcb-present-dev libxcb-xinerama0-dev libpixman-1-dev libdbus-1-dev libconfig-dev libgl1-mesa-dev libpcre2-dev libevdev-dev uthash-dev libev-dev libx11-xcb-dev libxcb-glx0-dev libpcre3 libpcre3-dev
+sudo apt install -y meson libxext-dev libxcb1-dev libxcb-damage0-dev libxcb-xfixes0-dev libxcb-shape0-dev libxcb-render-util0-dev libxcb-render0-dev libxcb-composite0-dev libxcb-image0-dev libxcb-present-dev libxcb-xinerama0-dev libpixman-1-dev libdbus-1-dev libconfig-dev libgl1-mesa-dev libpcre2-dev libevdev-dev uthash-dev libev-dev libx11-xcb-dev libxcb-glx0-dev libpcre3 libpcre3-dev
 
 # Instalamos paquetes adionales
 
-sudo apt install -y kitty feh scrot scrub rofi xclip bat locate ranger neofetch wmname acpi bspwm sxhkd imagemagick cmatrix
+sudo apt install -y kitty feh scrot scrub rofi xclip bat locate ranger neofetch wmname acpi bspwm sxhkd imagemagick
 
 # Creando carpeta de Reposistorios
 
@@ -62,6 +63,8 @@ sudo git clone --depth=1 https://github.com/romkatv/powerlevel10k.git /root/.pow
 
 mkdir -p ~/.config/rofi/themes
 cp $ruta/rofi/nord.rasi ~/.config/rofi/themes/
+cp $ruta/rofi/rounded-common.rasi ~/.config/rofi/themes/
+cp $ruta/rofi/rounded-purple-dark.rasi ~/.config/rofi/themes/
 
 # Instando lsd
 
@@ -75,7 +78,7 @@ sudo cp -v $ruta/fonts/HNF/* /usr/local/share/fonts/
 
 sudo cp -v $ruta/Config/polybar/fonts/* /usr/share/fonts/truetype/
 
-# Instalando Wallpaper de S4vitar
+# Instalando Wallpaper
 
 mkdir ~/Wallpaper
 cp -v $ruta/Wallpaper/* ~/Wallpaper
@@ -86,6 +89,10 @@ mkdir ~/ScreenShots
 rm -r ~/.config/polybar
 cp -rv $ruta/Config/* ~/.config/
 sudo cp -rv $ruta/kitty /opt/
+
+# Kitty Root
+
+sudo cp -rv $ruta/Config/kitty /root/.config/
 
 # Copia de configuracion de .p10k.zsh y .zshrc
 
@@ -100,6 +107,9 @@ sudo cp -v $ruta/.p10k.zsh-root /root/.p10k.zsh
 sudo cp -v $ruta/scripts/whichSystem.py /usr/local/bin/
 sudo cp -v $ruta/scripts/screenshot /usr/local/bin/
 
+# Instalamos Net-tools
+sudo apt install net-tools
+
 # Plugins ZSH
 
 sudo apt install -y zsh-syntax-highlighting zsh-autosuggestions
@@ -110,28 +120,27 @@ sudo wget https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/plugins/sudo/
 # Cambiando de SHELL a zsh
 
 sudo ln -s -fv ~/.zshrc /root/.zshrc
+usermod --shell /usr/bin/zsh $usuario
+usermod --shell /usr/bin/zsh root
 
 # Asignamos Permisos a los Scritps
 
 chmod +x ~/.config/bspwm/bspwmrc
 chmod +x ~/.config/bspwm/scripts/bspwm_resize
 chmod +x ~/.config/bin/ethernet_status.sh
-chmod +x ~/.config/bin/htb_status.sh
-chmod +x ~/.config/bin/htb_target.sh
 chmod +x ~/.config/polybar/launch.sh
 sudo chmod +x /usr/local/bin/whichSystem.py
 sudo chmod +x /usr/local/bin/screenshot
 
+# Configuramos el Tema de Rofi
+
+rofi-theme-selector
+
+# Removiendo Repositorio
+
+rm -rf ~/github
+rm -rfv $ruta
+
 # Mensaje de Instalado
-
-clear
-
-echo "Selecciona un theme en el theme selector"
-echo "Selecciona un theme en el theme selector"
-echo "Selecciona un theme en el theme selector"
-echo "Selecciona un theme en el theme selector"
-echo "Selecciona un theme en el theme selector"
-echo "Selecciona un theme en el theme selector"
-
 
 notify-send "BSPWM INSTALADO"

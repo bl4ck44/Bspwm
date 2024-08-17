@@ -20,8 +20,8 @@ window {
     background-color:               @background;
     text-color:                     @foreground;
     border-radius:                  20px;
-    height:                         11.5%;
-    width:                          12%;
+    height:                         36%;
+    width:                          15%;
     x-offset:                       -30;
     y-offset:                       70;
 }

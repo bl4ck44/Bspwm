@@ -1,104 +1,35 @@
-# AutoBspwm
+# Script Parrot
 
-Este es un script de instalación de BSPWM para kali o parrot linux, cabe aclarar que puede funcionar en otras distribuciones base debian sin embargo en las unicas que se mantiene estable y las cuales les daremos soporte será Kali linux y Parrot linux
+1.- Uso del Script
 
-## [Instalación]
-(AVISO: No ejecutes el script como ROOT o SUDO, el script te pedirá tu contraseña por cuenta propia, si lo ejecutas como root la instalación se detendrá)
+git clone https://github.com/xJackSx/BSPWMparrot.git
 
-Si necesitas más ayuda con esta instalación aquí tienes un video tutorial.
+cd BSPWMparrot
 
-TUTORIAL: [![TUTORIAL](linkdeimagen)](https://youtu.be/h2Au2ebTXJc?feature=shared)
+chmod +x install.sh
 
-1.- Uso del Script 
+./install.sh
 
-```
-git clone https://github.com/bl4ck44/Bspwm.git
-```
-```
-cd AutoBspwm
-```
-```
-chmod +x AutoInstall.sh
-```
-```
-./AutoInstall.sh
-```
-2.- Selecciona tu sistema operativo, 1 kali 2 parrot.
+"FULL UPGRADEADO"
 
-![](https://github.com/ZLCube/AutoBspwm/blob/main/pics/menu.png)
+y esta pensada en correr en maquinas virtuales de VMware
 
-3.- Nos va a saltar un theme selector NO SELECCIONES NADA AUN ignoralo
+Buenas compañeros,
 
-![](https://github.com/ZLCube/AutoBspwm/blob/main/pics/themes.png)
+Espero les sirva este pequeño aporte
 
-4.- Una vez nos salga la pantalla de select theme entonces podremos elegir cualquier tema del paso 3
+Hare algunas sugerencias que ya dependeran del gusto de cada quien
 
-![](https://github.com/ZLCube/AutoBspwm/blob/main/pics/select.png)
+2.- Wallpaper
 
-5.- Este menu es el rofi theme selector, para navegar entre los themes podemos usar flecha hacia arriba + enter, para seleccionar el que nos guste apretaremos alt + a.
+El wallpaper de nuestro queridisimo s4vitar esta alojado en una carpeta Wallpaper que se crea en nuestro HOME.
 
-![](https://github.com/ZLCube/AutoBspwm/blob/main/pics/rofi.png)
+La configuración del mismo es al gusto.
 
-En caso de querer cambiarlo nuevamente podemos escribir en consola ```rofi -theme selector```
-
-6.- Por ultimo la maquina se va a rebootear automaticamente, aquí cambiaremos de sesión arriba a la derecha cambiando de entorno default a BSPWM
-
-![](https://github.com/ZLCube/AutoBspwm/blob/main/pics/bspwm.png)
-
-7.- Wallpaper
-
-Para cambiar el wallpaper usaremos el comando
-``` nano .config/bspwm/bspwmrc ``` y renombrando el apartado wallpaper con el nombre del wallpaper de tu eleccion en la carpeta ```~/.config/Wallpaper/```.
-
-La configuración es la misma que el entorno de s4vitar al menos en cuanto a shortcuts y terminal se refiere.
-
-8.- Nvim
+3.- Nvim
 
 Esta no esta incluida en el scripts
 
+UNA MENCION HONORIFICA A Mr. Pr1ngl3s, por su gran colaboración.
 
-
-
-
-
-9.- En caso de unicamente requerir los dotfiles recuerda que los componentes basicos son bspwm, picom, pollybar, sxhkd, hacknerf fonts
-```
-  ____   _____ _______          ____  __    _____ _                _             _       
- |  _ \ / ____|  __ \ \        / /  \/  |  / ____| |              | |           | |      
- | |_) | (___ | |__) \ \  /\  / /| \  / | | (___ | |__   ___  _ __| |_ ___ _   _| |_ ___ 
- |  _ < \___ \|  ___/ \ \/  \/ / | |\/| |  \___ \| '_ \ / _ \| '__| __/ __| | | | __/ __|
- | |_) |____) | |      \  /\  /  | |  | |  ____) | | | | (_) | |  | || (__| |_| | |_\__ \
- |____/|_____/|_|       \/  \/   |_|  |_| |_____/|_| |_|\___/|_|   \__\___|\__,_|\__|___/
-                                                                                         
-
-windows + enter abre terminal 
-windows + w cierra terminal
-windows + d abre el buscador de aplicaciones
-windows hold mover libremente la ventana
-windows clic derecho reescalar libremente la ventana
-windows + alt + flechas escalar ventana
-windows + ctl + flechas mover ventana
-control + shift + t abre pestaña en terminal
-control shift alt t renombrar pestaña de terminal
-control shift w cerrar pestaña de terminal
-windows + "1,2,3,4,5,6,7,8,9,0" cambiar de escritorio
-windows + shift + "1,2,3,4,5,6,7,8,9,0" cambiar de escritorio la ventana actual al escritorio seleccionado
-
-
-Los dot files los puedes modificar en las siguientes rutas.
-
-~/.config/bspwm/bspwmrc
-~/.config/polybar/
-~/.config/picom/picom.conf
-~/.config/sxhkd/sxhkdrc
-```
-
-
-
-UNA MENCION HONORIFICA A Mr. Pr1ngl3s, y a xjacksx por su gran colaboración y autorizacion de usar sus repositorios así como a S4vitar por la configuración del entorno, te dejo el enlace a los perfiles de cada uno de ellos.
-
-xJacksx https://github.com/xJackSx/
-
-Mr.Pr1ngl3s https://github.com/MrPr1ngl3s
-
-S4vitar https://github.com/s4vitar
+UN GRAN SALUDO A NUESTRO GRAN AMIGO S4VITAR.

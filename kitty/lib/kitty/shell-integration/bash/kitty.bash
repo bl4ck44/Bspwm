@@ -13,8 +13,28 @@ if [[ -n "$KITTY_BASH_INJECT" ]]; then
     if [[ -z "$KITTY_BASH_ETC_LOCATION" ]]; then KITTY_BASH_ETC_LOCATION="/etc"; fi
 
     _ksi_sourceable() {
-        [[ -f "$1" && -r "$1" ]] && return 0; return 1;
+        [[ -f "$1" && -r "$1" ]] && builtin return 0; builtin return 1;
     }
+
+    if [[ -n "$ksi_val" && "$ksi_val" != *no-sudo* && -n "$TERMINFO" && ! ( -r "/usr/share/terminfo/x/xterm-kitty" || -r "/usr/share/terminfo/78/xterm-kitty" ) ]]; then
+        # this must be done before sourcing user bashrc otherwise aliasing of sudo does not work
+        sudo() {
+            # Ensure terminfo is available in sudo
+            builtin local is_sudoedit="n"
+            for arg; do
+                if [[ "$arg" == "-e" || $arg == "--edit" ]]; then
+                    is_sudoedit="y"
+                    builtin break;
+                fi
+                [[ "$arg" != -* && "$arg" != *=* ]] && builtin break  # command found
+            done
+            if [[ "$is_sudoedit" == "y" ]]; then
+                builtin command sudo "$@";
+            else
+                builtin command sudo TERMINFO="$TERMINFO" "$@";
+            fi
+        }
+    fi
 
     if [[ "$kitty_bash_inject" == *"posix"* ]]; then
         _ksi_sourceable "$KITTY_BASH_POSIX_ENV" && {
@@ -40,7 +60,7 @@ if [[ -n "$KITTY_BASH_INJECT" ]]; then
         else
             if [[ "$kitty_bash_inject" != *"no-rc"* ]]; then
                 # Linux distros build bash with -DSYS_BASHRC. Unfortunately, there is
-                # no way to to probe bash for it and different distros use different files
+                # no way to probe bash for it and different distros use different files
                 # Arch, Debian, Ubuntu use /etc/bash.bashrc
                 # Fedora uses /etc/bashrc sourced from ~/.bashrc instead of SYS_BASHRC
                 # Void Linux uses /etc/bash/bashrc
@@ -75,12 +95,12 @@ fi
 # which is not available on older bash
 builtin declare -A _ksi_prompt
 _ksi_prompt=(
-    [cursor]='y' [title]='y' [mark]='y' [complete]='y' [cwd]='y' [ps0]='' [ps0_suffix]='' [ps1]='' [ps1_suffix]='' [ps2]=''
+    [cursor]='y' [title]='y' [mark]='y' [complete]='y' [cwd]='y' [sudo]='y' [ps0]='' [ps0_suffix]='' [ps1]='' [ps1_suffix]='' [ps2]=''
     [hostname_prefix]='' [sourced]='y' [last_reported_cwd]=''
 )
 
 _ksi_main() {
-    builtin local ifs="$IFS"
+    builtin local ifs="$IFS" i
     IFS=" "
     for i in ${KITTY_SHELL_INTEGRATION[@]}; do
         case "$i" in
@@ -89,6 +109,7 @@ _ksi_main() {
             "no-prompt-mark") _ksi_prompt[mark]='n';;
             "no-complete") _ksi_prompt[complete]='n';;
             "no-cwd") _ksi_prompt[cwd]='n';;
+            "no-sudo") _ksi_prompt[sudo]='n';;
         esac
     done
     IFS="$ifs"
@@ -174,6 +195,22 @@ _ksi_main() {
         _ksi_prompt[ps0_suffix]+="\[\e[0 q\]"  # blinking default cursor
     fi
 
+    if [[ "${_ksi_prompt[title]}" == "y" ||  "${_ksi_prompt[mark]}" ]]; then
+        _ksi_get_current_command() {
+            builtin local last_cmd
+            last_cmd=$(HISTTIMEFORMAT= builtin history 1)
+            last_cmd="${last_cmd#*[[:digit:]]*[[:space:]]}"  # remove leading history number
+            last_cmd="${last_cmd#"${last_cmd%%[![:space:]]*}"}"  # remove remaining leading whitespace
+            if [[ "${_ksi_prompt[title]}" == "y" ]]; then
+                builtin printf "\e]2;%s%s\a" "${_ksi_prompt[hostname_prefix]@P}" "${last_cmd//[[:cntrl:]]}" # removes any control characters
+            fi
+            if [[ "${_ksi_prompt[mark]}" == "y" ]]; then
+                builtin printf "\e]133;C;cmdline=%q\a" "$last_cmd"
+            fi
+        }
+        _ksi_prompt[ps0]+='$(_ksi_get_current_command > /dev/tty)';
+    fi
+
     if [[ "${_ksi_prompt[title]}" == "y" ]]; then
         if [[ -z "$KITTY_PID" ]]; then
             if [[ -n "$SSH_TTY" || -n "$SSH2_TTY$KITTY_WINDOW_ID" ]]; then
@@ -191,23 +228,20 @@ _ksi_main() {
         # we use suffix here because some distros add title setting to their bashrc files by default
         _ksi_prompt[ps1_suffix]+="\[\e]2;${_ksi_prompt[hostname_prefix]}\w\a\]"
         if [[ "$HISTCONTROL" == *"ignoreboth"* ]] || [[ "$HISTCONTROL" == *"ignorespace"* ]]; then
-            _ksi_debug_print "ignoreboth or ignorespace present in bash HISTCONTROL setting, showing running command in window title will not be robust"
+            _ksi_debug_print "ignoreboth or ignorespace present in bash HISTCONTROL setting, showing running command will not be robust"
         fi
-        _ksi_get_current_command() {
-            builtin local last_cmd
-            last_cmd=$(HISTTIMEFORMAT= builtin history 1)
-            last_cmd="${last_cmd#*[[:digit:]]*[[:space:]]}"  # remove leading history number
-            last_cmd="${last_cmd#"${last_cmd%%[![:space:]]*}"}"  # remove remaining leading whitespace
-            builtin printf "\e]2;%s%s\a" "${_ksi_prompt[hostname_prefix]@P}" "${last_cmd//[[:cntrl:]]}"  # remove any control characters
-        }
-        _ksi_prompt[ps0_suffix]+='$(_ksi_get_current_command)'
     fi
 
     if [[ "${_ksi_prompt[mark]}" == "y" ]]; then
-        _ksi_prompt[ps1]+="\[\e]133;A\a\]"
+        # this can result in multiple D prompt marks or ones that dont
+        # correspond to a cmd but kitty handles this gracefully, only
+        # taking into account the first D after a C.
+        _ksi_prompt[ps1]+="\[\e]133;D;\$?\a\e]133;A\a\]"
         _ksi_prompt[ps2]+="\[\e]133;A;k=s\a\]"
-        _ksi_prompt[ps0]+="\[\e]133;C\a\]"
     fi
+
+    builtin alias edit-in-kitty="kitten edit-in-kitty"
+
 
     if [[ "${_ksi_prompt[complete]}" == "y" ]]; then
         _ksi_completions() {
@@ -215,14 +249,15 @@ _ksi_main() {
             builtin local limit
             # Send all words up to the word the cursor is currently on
             builtin let limit=1+$COMP_CWORD
-            src=$(builtin printf "%s\n" "${COMP_WORDS[@]:0:$limit}" | builtin command kitty +complete bash)
+            src=$(builtin printf "%s\n" "${COMP_WORDS[@]:0:$limit}" | builtin command kitten __complete__ bash)
             if [[ $? == 0 ]]; then
                 builtin eval "${src}"
             fi
         }
-        builtin complete -o nospace -F _ksi_completions kitty
-        builtin complete -o nospace -F _ksi_completions edit-in-kitty
-        builtin complete -o nospace -F _ksi_completions clone-in-kitty
+        builtin complete -F _ksi_completions kitty
+        builtin complete -F _ksi_completions edit-in-kitty
+        builtin complete -F _ksi_completions clone-in-kitty
+        builtin complete -F _ksi_completions kitten
     fi
 
     # wrap our prompt additions in markers we can use to remove them using
@@ -242,7 +277,12 @@ _ksi_main() {
     if [[ -n "${_ksi_prompt[ps2]}" ]]; then
         _ksi_prompt[ps2]="${_ksi_prompt[start_mark]}${_ksi_prompt[ps2]}${_ksi_prompt[end_mark]}"
     fi
+    # BASH aborts the entire script when doing unset with failglob set, somebody should report this upstream
+    builtin local oldval
+    oldval=$(builtin shopt -p failglob)
+    builtin shopt -u failglob
     builtin unset _ksi_prompt[start_mark] _ksi_prompt[end_mark] _ksi_prompt[start_suffix_mark] _ksi_prompt[end_suffix_mark] _ksi_prompt[start_secondary_mark] _ksi_prompt[end_secondary_mark]
+    builtin eval "$oldval"
 
     # install our prompt command, using an array if it is unset or already an array,
     # otherwise append a string. We check if _ksi_prompt_command exists as some shell
@@ -250,7 +290,7 @@ _ksi_main() {
     # from the shell
     builtin local pc
     pc='builtin declare -F _ksi_prompt_command > /dev/null 2> /dev/null && _ksi_prompt_command'
-    if [[ -z "${PROMPT_COMMAND}" ]]; then
+    if [[ -z "${PROMPT_COMMAND[*]}" ]]; then
         PROMPT_COMMAND=([0]="$pc")
     elif [[ $(builtin declare -p PROMPT_COMMAND 2> /dev/null) =~ 'declare -a PROMPT_COMMAND' ]]; then
         PROMPT_COMMAND+=("$pc")
@@ -270,8 +310,8 @@ _ksi_main() {
         builtin local venv="${VIRTUAL_ENV}/bin/activate"
         builtin local sourced=""
         _ksi_s_is_ok() {
-            [[ -z "$sourced" && "$KITTY_CLONE_SOURCE_STRATEGIES" == *",$1,"* ]] && return 0
-            return 1
+            [[ -z "$sourced" && "$KITTY_CLONE_SOURCE_STRATEGIES" == *",$1,"* ]] && builtin return 0
+            builtin return 1
         }
 
         if _ksi_s_is_ok "venv" && [ -n "${VIRTUAL_ENV}" -a -r "$venv" ]; then
@@ -330,13 +370,14 @@ _ksi_transmit_data() {
 }
 
 clone-in-kitty() {
-    builtin local data="shell=bash,pid=$$,cwd=$(builtin printf "%s" "$PWD" | builtin command base64),envfmt=bash,env=$(builtin export | builtin command base64)"
+    builtin local bv="${BASH_VERSINFO[0]}.${BASH_VERSINFO[1]}.${BASH_VERSINFO[2]}"
+    builtin local data="shell=bash,pid=$$,bash_version=$bv,cwd=$(builtin printf "%s" "$PWD" | builtin command base64),envfmt=bash,env=$(builtin export | builtin command base64)"
     while :; do
         case "$1" in
             "") break;;
             -h|--help)
                 builtin printf "%s\n\n%s\n" "Clone the current bash session into a new kitty window." "For usage instructions see: https://sw.kovidgoyal.net/kitty/shell-integration/#clone-shell"
-                return
+                builtin return
                 ;;
             *) data="$data,a=$(builtin printf "%s" "$1" | builtin command base64)";;
         esac
@@ -345,82 +386,6 @@ clone-in-kitty() {
     _ksi_transmit_data "$data" "clone" "save_history"
 }
 
-edit-in-kitty() {
-    builtin local data=""
-    builtin local ed_filename=""
-    builtin local usage="Usage: edit-in-kitty [OPTIONS] FILE"
-    data="cwd=$(builtin printf "%s" "$PWD" | builtin command base64)"
-    while :; do
-        case "$1" in
-            "") break;;
-            -h|--help)
-                builtin printf "%s\n\n%s\n\n%s\n" "$usage" "Edit the specified file in a kitty overlay window. Works over SSH as well." "For usage instructions see: https://sw.kovidgoyal.net/kitty/shell-integration/#edit-file"
-                return
-                ;;
-            *) data="$data,a=$(builtin printf "%s" "$1" | builtin command base64)"; ed_filename="$1";;
-        esac
-        shift
-    done
-    [ -z "$ed_filename" ] && {
-        builtin echo "$usage" > /dev/stderr
-        return 1
-    }
-    [ -r "$ed_filename" -a -w "$ed_filename" ] || {
-        builtin echo "$ed_filename is not readable and writable" > /dev/stderr
-        return 1
-    }
-    [ ! -f "$ed_filename" ] && {
-        builtin echo "$ed_filename is not a file" > /dev/stderr
-        return 1
-    }
-    builtin local stat_result=""
-    stat_result=$(builtin command stat -L --format '%d:%i:%s' "$ed_filename" 2> /dev/null)
-    [ $? != 0 ] && stat_result=$(builtin command stat -L -f '%d:%i:%z' "$ed_filename" 2> /dev/null)
-    [ -z "$stat_result" ] && { builtin echo "Failed to stat the file: $ed_filename" > /dev/stderr; return 1; }
-    data="$data,file_inode=$stat_result"
-    builtin local file_size=$(builtin echo "$stat_result" | builtin command cut -d: -f3)
-    [ "$file_size" -gt $((8 * 1024 * 1024)) ] && { builtin echo "File is too large for performant editing"; return 1; }
-    data="$data,file_data=$(builtin command base64 < "$ed_filename")"
-    _ksi_transmit_data "$data" "edit"
-    data=""
-    builtin echo "Waiting for editing to be completed..."
-    _ksi_wait_for_complete() {
-        builtin local started="n"
-        builtin local line=""
-        builtin local old_tty_settings=$(builtin command stty -g)
-        builtin command stty "-echo"
-        builtin trap -- "builtin command stty '$old_tty_settings'" RETURN
-        builtin trap -- "builtin command stty '$old_tty_settings'; _ksi_transmit_data 'abort_signaled=interrupt' 'edit'; builtin exit 1;" SIGINT SIGTERM
-        while :; do
-            started="n"
-            while IFS= builtin read -r line; do
-                if [ "$started" = "y" ]; then
-                    [ "$line" = "UPDATE" ] && break
-                    [ "$line" = "DONE" ] && { started="done"; break; }
-                    builtin printf "%s\n" "$line" > /dev/stderr
-                    return 1
-                else
-                    [ "$line" = "KITTY_DATA_START" ] && started="y"
-                fi
-            done
-            [ "$started" = "n" ] && continue
-            data=""
-            while IFS= builtin read -r line; do
-                [ "$line" = "KITTY_DATA_END" ] && break
-                data="$data$line"
-            done
-            [ -n "$data" -a "$started" != "done" ] && {
-                builtin echo "Updating $ed_filename..."
-                builtin printf "%s" "$data" | builtin command base64 -d > "$ed_filename"
-            }
-            [ "$started" = "done" ] && break
-        done
-    }
-    $(_ksi_wait_for_complete > /dev/tty)
-    builtin local rc=$?
-    builtin unset -f _ksi_wait_for_complete
-    return $rc
-}
       ;;
 esac
 

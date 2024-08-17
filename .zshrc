@@ -90,6 +90,7 @@ function extractPorts(){
 # Settarget
 
 function settarget(){
+
 	if [ $# -eq 1 ]; then
 	echo $1 > ~/.config/bin/target
 	elif [ $# -gt 2 ]; then

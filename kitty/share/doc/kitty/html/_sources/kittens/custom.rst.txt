@@ -56,7 +56,7 @@ Kittens have full access to internal kitty APIs. However these are neither
 entirely stable nor documented. You can instead use the kitty
 :doc:`Remote control API </remote-control>`. Simply call
 :code:`boss.call_remote_control()`, with the same arguments you
-would pass to ``kitty @``. For example:
+would pass to ``kitten @``. For example:
 
 .. code-block:: python
 
@@ -64,8 +64,13 @@ would pass to ``kitty @``. For example:
         # get the kitty window to which to send text
         w = boss.window_id_map.get(target_window_id)
         if w is not None:
-            boss.call_remote_control(w, ('send-text', 'hello world'))
+            boss.call_remote_control(w, ('send-text', f'--match=id:{w.id}', 'hello world'))
 
+.. note::
+   Inside handle_result() the active window is still the window in which the
+   kitten was run, therefore when using call_remote_control() be sure to pass
+   the appropriate option to select the target window, usually ``--match`` as
+   shown above or ``--self``.
 
 
 Passing arguments to kittens
@@ -332,9 +337,10 @@ You can parse and read the options in your kitten using the following code:
             return ans
 
         overrides = tuple(overrides) if overrides is not None else ()
-        opts_dict, paths = _load_config(defaults, parse_config, merge_result_dicts, *paths, overrides=overrides)
+        opts_dict, found_paths = _load_config(defaults, parse_config, merge_result_dicts, *paths, overrides=overrides)
         opts = Options(opts_dict)
-        opts.config_paths = paths
+        opts.config_paths = found_paths
+        opts.all_config_paths = paths
         opts.config_overrides = overrides
         return opts
 

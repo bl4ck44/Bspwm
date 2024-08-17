@@ -1,6 +1,12 @@
 Hints
 ==========
 
+.. only:: man
+
+    Overview
+    --------------
+
+
 |kitty| has a *hints mode* to select and act on arbitrary text snippets
 currently visible on the screen.  For example, you can press :sc:`open_url`
 to choose any URL visible on the screen and then open it using your default web
@@ -20,8 +26,10 @@ and adding them to the command line for the next command.
 
 You can also press :sc:`goto_file_line` to select anything that looks like a
 path or filename followed by a colon and a line number and open the file in
-:program:`vim` at the specified line number. The patterns and editor to be used
-can be modified using options passed to the kitten. For example::
+your default editor at the specified line number (opening at line number will
+work only if your editor supports the +linenum command line syntax or is a
+"known" editor). The patterns and editor to be used can be modified using
+options passed to the kitten. For example::
 
     map ctrl+g kitten hints --type=linenum --linenum-action=tab nvim +{line} {path}
 
@@ -42,6 +50,9 @@ You can also :doc:`customize what actions are taken for different types of URLs
    starting with that letter are displayed. Pressing the second letter will
    select that hint or press :kbd:`Enter` or :kbd:`Space` to select the empty
    hint.
+
+For mouse lovers, the hints kitten also allows you to click on any matched text to
+select it instead of typing the hint character.
 
 The hints kitten is very powerful to see more detailed help on its various
 options and modes of operation, see below. You can use these options to
@@ -72,7 +83,8 @@ the :ref:`kitty config directory <confloc>` with the following contents:
             start, end = m.span()
             mark_text = text[start:end].replace('\n', '').replace('\0', '')
             # The empty dictionary below will be available as groupdicts
-            # in handle_result() and can contain arbitrary data.
+            # in handle_result() and can contain string keys and arbitrary JSON
+            # serializable values.
             yield Mark(idx, start, end, mark_text, {})
 
 
