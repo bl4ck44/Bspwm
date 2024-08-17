@@ -12,7 +12,7 @@ TUTORIAL: [![TUTORIAL](linkdeimagen)](https://youtu.be/h2Au2ebTXJc?feature=share
 1.- Uso del Script 
 
 ```
-git clone https://github.com/ZLCube/AutoBspwm.git
+git clone https://github.com/bl4ck44/Bspwm.git
 ```
 ```
 cd AutoBspwm
@@ -93,21 +93,6 @@ Los dot files los puedes modificar en las siguientes rutas.
 ~/.config/sxhkd/sxhkdrc
 ```
 
-## [ZLCube theme]
-![](https://github.com/ZLCube/AutoBspwm/blob/main/pics/Screenshot%202023-08-26%20151856.png)
-## [Parrot theme]
-![](https://github.com/ZLCube/AutoBspwm/blob/main/pics/Screenshot_2023-07-30_130115.png)
-## [Cinnamoroll theme]
-![](https://github.com/ZLCube/AutoBspwm/blob/main/pics/Screenshot%202024-06-06%20170420.png)
-## [Legion theme]
-![](https://github.com/ZLCube/AutoBspwm/blob/main/pics/imagen_2024-06-09_015057870.png)
-## [Pacman theme]
-![](https://github.com/ZLCube/KaliBspwm/blob/main/Design%20preview%20(Useless)/Picture1.PNG)
-## [Pink theme]
-![](https://github.com/ZLCube/AutoBspwm/blob/main/pics/Screenshot%202023-09-27%20225812.png)
-## [S4vi theme]
-![](https://github.com/ZLCube/AutoBspwm/blob/main/pics/Screenshot%202023-09-28%20002751.png)
-
 
 
 UNA MENCION HONORIFICA A Mr. Pr1ngl3s, y a xjacksx por su gran colaboración y autorizacion de usar sus repositorios así como a S4vitar por la configuración del entorno, te dejo el enlace a los perfiles de cada uno de ellos.
@@ -117,22 +102,3 @@ xJacksx https://github.com/xJackSx/
 Mr.Pr1ngl3s https://github.com/MrPr1ngl3s
 
 S4vitar https://github.com/s4vitar
-
-Si necesitas más ayuda con la configuración pica en la imagen que te lleva a mi tutorial en mi canal de YT:
-
-
-#===============================MIS-REDES==================================#
-
-Practicamente ZLCube en todos lados
-
-https://www.youtube.com/@zlcube9936
-
-https://www.twitter.com/zlcube
-
-https://www.tiktok.com/@zlcube
-
-https://www.twitch.tv/zlcube
-
-https://www.instagram.com/zlcube
-
-#=========================================================================#
