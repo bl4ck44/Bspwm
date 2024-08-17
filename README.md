@@ -2,9 +2,9 @@
 
 1.- Uso del Script
 
-git clone https://github.com/xJackSx/BSPWMparrot.git
+git clone https://github.com/bl4ck44/Bspwm.git
 
-cd BSPWMparrot
+cd Bspwm
 
 chmod +x install.sh
 
