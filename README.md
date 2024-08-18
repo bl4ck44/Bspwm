@@ -16,9 +16,11 @@ El wallpaper de esta alojado en una carpeta Wallpaper que se crea en nuestro HOM
 
 La configuración del mismo es al gusto.
 
-**CREDITOS:** xJackSx
+**CREDITOS:** xJackSx, s4vitar
 
 https://github.com/xJackSx/BSPWMparrot
+
+https://github.com/s4vitar
 
 
 ![Cpatura](Captura.png)
