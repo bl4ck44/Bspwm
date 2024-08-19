@@ -132,8 +132,7 @@ chmod +x ~/.config/bin/htb_status.sh
 chmod +x ~/.config/bin/htb_target.sh
 chmod +x ~/.config/polybar/launch.sh
 sudo chmod +x /usr/local/bin/whichSystem.py
-sudo chmod +x ~/.config/polybar/scripts/powermenu_alt
-sudo chmod +x /opt/kitty/bin/kitty
+
 
 # Configuramos el Tema de Rofi
 
