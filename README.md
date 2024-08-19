@@ -6,7 +6,7 @@ git clone https://github.com/bl4ck44/Bspwm.git
 
 cd Bspwm
 
-sudo chmod +x install.sh
+chmod +x install.sh
 
 ./install.sh
 
